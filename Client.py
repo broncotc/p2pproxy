@@ -5,7 +5,6 @@ import sys
 import urllib2
 import httplib
 import random
-import signal
 import threading
 from shadowsocks.common import to_bytes, to_str
 from shadowsocks import shell, daemon, eventloop, tcprelay, asyncdns
