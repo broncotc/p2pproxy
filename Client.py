@@ -1,5 +1,4 @@
 __author__="BroncoTc"
-__doc__=r"""Reference to http://www.tuicool.com/articles/uMvqqeE"""
 import socket
 import re
 import sys
