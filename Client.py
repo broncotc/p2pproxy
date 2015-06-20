@@ -119,16 +119,27 @@ rndPassword=random.uniform(1,65535)
 config={}
 config['server_port'] = 13579
 config['password'] = to_bytes(rndPassword)
-config['server'] = to_str(Get_local_ip())
+config['server'] = to_str("0.0.0.0")
 config['method'] = to_str("rc4_md5")
+config['timeout']=800
+config['port_password'] = config.get('port_password', None)
+config['fast_open'] = config.get('fast_open', False)
+config['workers'] = config.get('workers', 1)
+config['pid-file'] = config.get('pid-file', '/var/run/shadowsocks.pid')
+config['log-file'] = config.get('log-file', '/var/log/shadowsocks.log')
+config['verbose'] = config.get('verbose', False)
+config['local_address'] = to_str(config.get('local_address', '127.0.0.1'))
+config['local_port'] = config.get('local_port', 1080)
+a_config = config.copy()
+a_config['server_port'] = int(config['server_port'])
+a_config['password'] = config['password']
 tcp_servers = []
-udp_servers = []
 dns_resolver = asyncdns.DNSResolver()
-
+tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
 def run_server():
 	def child_handler(signum, _):
 		list(map(lambda s: s.close(next_tick=True),
-				 tcp_servers + udp_servers))
+				 tcp_servers))
 	signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
                       child_handler)
 	def int_handler(signum, _):
@@ -137,9 +148,10 @@ def run_server():
 	try:
 		loop = eventloop.EventLoop()
 		dns_resolver.add_to_loop(loop)
-		list(map(lambda s: s.add_to_loop(loop), tcp_servers + udp_servers))
+		list(map(lambda s: s.add_to_loop(loop), tcp_servers))
 		daemon.set_user(config.get('user', None))
 		loop.run()
 	except Exception as e:
 		shell.print_exception(e)
 		sys.exit(1)
+run_server()
