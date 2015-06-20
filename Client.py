@@ -131,11 +131,9 @@ def run_server():
 				 tcp_servers + udp_servers))
 	signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
                       child_handler)
-
 	def int_handler(signum, _):
 		sys.exit(1)
 	signal.signal(signal.SIGINT, int_handler)
-
 	try:
 		loop = eventloop.EventLoop()
 		dns_resolver.add_to_loop(loop)

@@ -7,4 +7,4 @@
 - Choosable proxy region
 
 With the client published in this repository anybody can become a node of the network.
-**Please be aware that this network can't protect your Internet traffic in the opposite node. Node owners can listen to the traffic pass through thier node!!!!!**
+**Please be aware that this network can't protect your Internet traffic in the opposite node. Node owners can listen to the traffic pass through thier nodes!!!!!**
