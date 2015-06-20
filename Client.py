@@ -7,8 +7,9 @@ import urllib2
 import httplib
 import random
 import signal
-from shadowsocks.common import to_bytes, to_str, IPNetwork
-from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
+import threading
+from shadowsocks.common import to_bytes, to_str
+from shadowsocks import shell, daemon, eventloop, tcprelay, asyncdns
 from urlparse import urlparse
 from xml.dom.minidom import parseString
 from xml.dom.minidom import Document
@@ -115,12 +116,12 @@ if 200<>resp.status:
 	print "It seems like the TCP port forwarding failed"
 	sys.exit()
 
-rndPassword=random.uniform(1,65535)
+rndPassword=str(random.uniform(1,65535))
 config={}
 config['server_port'] = 13579
 config['password'] = to_bytes(rndPassword)
 config['server'] = to_str("0.0.0.0")
-config['method'] = to_str("rc4_md5")
+config['method'] = to_str("rc4-md5")
 config['timeout']=800
 config['port_password'] = config.get('port_password', None)
 config['fast_open'] = config.get('fast_open', False)
@@ -137,14 +138,7 @@ tcp_servers = []
 dns_resolver = asyncdns.DNSResolver()
 tcp_servers.append(tcprelay.TCPRelay(a_config, dns_resolver, False))
 def run_server():
-	def child_handler(signum, _):
-		list(map(lambda s: s.close(next_tick=True),
-				 tcp_servers))
-	signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
-                      child_handler)
-	def int_handler(signum, _):
-		sys.exit(1)
-	signal.signal(signal.SIGINT, int_handler)
+
 	try:
 		loop = eventloop.EventLoop()
 		dns_resolver.add_to_loop(loop)
@@ -154,4 +148,29 @@ def run_server():
 	except Exception as e:
 		shell.print_exception(e)
 		sys.exit(1)
-run_server()
+serverThread=threading.Thread(target=run_server)
+serverThread.start()
+class Getmyip:
+	def getip(self):
+		try:
+			myip = self.visit("http://www.ip138.com/ip2city.asp")
+		except:
+			try:
+				myip = self.visit("http://www.bliao.com/ip.phtml")
+			except:
+				try:
+					myip = self.visit("http://www.whereismyip.com/")
+				except:
+					myip = "Failed to fetch your external IP address, check your Internet connection"
+		return myip
+	def visit(self,url):
+		opener = urllib2.urlopen(url)
+		if url == opener.geturl():
+			str = opener.read()
+		return re.search('\d+\.\d+\.\d+\.\d+',str).group(0)
+externalip=Getmyip().getip()
+print "Server IP address: ",externalip
+print "Port to connect: ","23333"
+print "Method: ","rc4-md5"
+print "Password: ",rndPassword
+
