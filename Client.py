@@ -5,6 +5,9 @@ import re
 import sys
 import urllib2
 import httplib
+import random
+import signal
+from shadowsocks.common import to_bytes, to_str, IPNetwork
 from shadowsocks import shell, daemon, eventloop, tcprelay, udprelay, asyncdns
 from urlparse import urlparse
 from xml.dom.minidom import parseString
@@ -112,8 +115,33 @@ if 200<>resp.status:
 	print "It seems like the TCP port forwarding failed"
 	sys.exit()
 
+rndPassword=random.uniform(1,65535)
+config={}
+config['server_port'] = 13579
+config['password'] = to_bytes(rndPassword)
+config['server'] = to_str(Get_local_ip())
+config['method'] = to_str("rc4_md5")
+tcp_servers = []
+udp_servers = []
+dns_resolver = asyncdns.DNSResolver()
 
+def run_server():
+	def child_handler(signum, _):
+		list(map(lambda s: s.close(next_tick=True),
+				 tcp_servers + udp_servers))
+	signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
+                      child_handler)
 
+	def int_handler(signum, _):
+		sys.exit(1)
+	signal.signal(signal.SIGINT, int_handler)
 
-
-
+	try:
+		loop = eventloop.EventLoop()
+		dns_resolver.add_to_loop(loop)
+		list(map(lambda s: s.add_to_loop(loop), tcp_servers + udp_servers))
+		daemon.set_user(config.get('user', None))
+		loop.run()
+	except Exception as e:
+		shell.print_exception(e)
+		sys.exit(1)
