@@ -1,3 +1,5 @@
+# Currently it's just a upnp-based shadowsocks starter
+
 ## A P2Pproxy network ##
 ####This is a project used to create a network of proxy clients and servers####
 - Every user is both a server and a client
